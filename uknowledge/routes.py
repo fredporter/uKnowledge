@@ -1,8 +1,4 @@
-"""uKnowledge route registrar.
-
-Temporary contract: all knowledge routes return HTTP 501 until features are
-implemented in this repository.
-"""
+"""uKnowledge route registrar."""
 
 from __future__ import annotations
 
@@ -30,6 +26,32 @@ async def handle_list_documents(request: web.Request) -> web.Response:
     docs = list_documents(workspace_id)
     return web.json_response(
         {"documents": docs, "count": len(docs)},
+    )
+
+
+async def handle_get_document(request: web.Request) -> web.Response:
+    """GET /api/knowledge/documents/{object_id} — get document metadata."""
+    from app.knowledge.appflowy import get_document
+
+    object_id = request.match_info.get("object_id", "").strip()
+    workspace_id = request.query.get("workspace_id")
+    doc = get_document(object_id, workspace_id)
+    if not doc:
+        return web.json_response({"error": "Document not found"}, status=404)
+    return web.json_response(doc)
+
+
+async def handle_get_document_content(request: web.Request) -> web.Response:
+    """GET /api/knowledge/documents/{object_id}/content — get document text."""
+    from app.knowledge.appflowy import get_document_content
+
+    object_id = request.match_info.get("object_id", "").strip()
+    workspace_id = request.query.get("workspace_id")
+    content = get_document_content(object_id, workspace_id)
+    if content is None:
+        return web.json_response({"error": "Document not found"}, status=404)
+    return web.json_response(
+        {"object_id": object_id, "content": content, "length": len(content)},
     )
 
 
@@ -225,6 +247,10 @@ def register_routes(app: web.Application) -> None:
                 app.router.add_get(path, handle_workspace_views)
             elif path == "/api/knowledge/documents":
                 app.router.add_get(path, handle_list_documents)
+            elif path == "/api/knowledge/documents/{object_id}":
+                app.router.add_get(path, handle_get_document)
+            elif path == "/api/knowledge/documents/{object_id}/content":
+                app.router.add_get(path, handle_get_document_content)
             elif path == "/api/knowledge/views/{view_id}":
                 app.router.add_get(path, handle_get_view)
             else:

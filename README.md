@@ -6,8 +6,8 @@ AppFlowy bridge, semantic search, knowledge layer, and vault indexing extracted 
 
 uKnowledge is now the required owner for knowledge route registration.
 uCore delegates route registration to `uknowledge.routes.register_routes(app)`.
-Current implementation is a temporary explicit 501 contract while full features
-are migrated from uCore.
+Core read/query endpoints are live, with remaining mutation and sync paths
+still marked as explicit not-yet-implemented contracts.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ uKnowledge (this repo)        uCore (host)
 └────────────────────────┘   └──────────────────────────────┘
 ```
 
-## Endpoints (temporary 501 contract)
+## Endpoints
 
 | Method | Path                                         | Description         |
 | ------ | -------------------------------------------- | ------------------- |
@@ -45,6 +45,8 @@ Current behavior:
 
 - `/api/knowledge/workspaces`: implemented (returns 200)
 - `/api/knowledge/documents`: implemented (returns 200)
+- `/api/knowledge/documents/{id}`: implemented (returns 200/404)
+- `/api/knowledge/documents/{id}/content`: implemented (returns 200/404)
 - `/api/knowledge/search`: implemented (returns 400 for missing `q`, else 200)
 - all other routes: temporary `501` with payload
   `{ "error": "Not implemented in uKnowledge yet", "endpoint": "<route>" }`
