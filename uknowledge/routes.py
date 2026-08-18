@@ -7,6 +7,8 @@ from pathlib import Path
 
 from aiohttp import web
 
+from .config import workspace_permissions, workspace_registry_path
+
 
 async def handle_list_workspaces(_request: web.Request) -> web.Response:
     """GET /api/knowledge/workspaces — list AppFlowy workspaces."""
@@ -56,7 +58,8 @@ async def handle_get_document_content(request: web.Request) -> web.Response:
 
 
 def _workspace_registry_path() -> Path:
-    return Path.home() / ".ucore" / "data" / "vault_workspaces.json"
+    """Compatibility wrapper for callers/tests using the historical helper."""
+    return workspace_registry_path()
 
 
 def _load_workspace_registry() -> list[dict[str, object]]:
@@ -93,6 +96,7 @@ async def handle_register_workspace(request: web.Request) -> web.Response:
             status=400,
         )
 
+    permissions = workspace_permissions(vault_path) if vault_path else "read_write"
     rows = _load_workspace_registry()
     rows = [r for r in rows if str(r.get("workspace_id")) != workspace_id]
     rows.append(
@@ -101,6 +105,7 @@ async def handle_register_workspace(request: web.Request) -> web.Response:
             "name": name,
             "vault_path": vault_path,
             "source": "udos-vaults",
+            "permissions": permissions,
         },
     )
     _save_workspace_registry(rows)
@@ -110,6 +115,7 @@ async def handle_register_workspace(request: web.Request) -> web.Response:
             "workspace_id": workspace_id,
             "name": name,
             "vault_path": vault_path,
+            "permissions": permissions,
         },
         status=201,
     )
@@ -159,6 +165,23 @@ async def handle_create_view(request: web.Request) -> web.Response:
         return web.json_response(
             {"error": "title and workspace_id are required"},
             status=400,
+        )
+
+    workspace = next(
+        (
+            row
+            for row in _load_workspace_registry()
+            if str(row.get("workspace_id")) == workspace_id
+        ),
+        None,
+    )
+    if workspace and workspace.get("permissions") == "read_only":
+        return web.json_response(
+            {
+                "error": "Knowledge workspace is read-only",
+                "workspace_id": workspace_id,
+            },
+            status=403,
         )
 
     return web.json_response(
