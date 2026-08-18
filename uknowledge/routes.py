@@ -8,12 +8,17 @@ from pathlib import Path
 from aiohttp import web
 
 from .config import workspace_permissions, workspace_registry_path
+from .library import (
+    get_document,
+    get_document_content,
+    list_documents,
+    list_workspaces,
+    search,
+)
 
 
 async def handle_list_workspaces(_request: web.Request) -> web.Response:
-    """GET /api/knowledge/workspaces — list AppFlowy workspaces."""
-    from app.knowledge.appflowy import list_workspaces
-
+    """GET /api/knowledge/workspaces — list filesystem vaults."""
     workspaces = list_workspaces()
     return web.json_response(
         {"workspaces": workspaces, "count": len(workspaces)},
@@ -22,8 +27,6 @@ async def handle_list_workspaces(_request: web.Request) -> web.Response:
 
 async def handle_list_documents(request: web.Request) -> web.Response:
     """GET /api/knowledge/documents — list documents in a workspace."""
-    from app.knowledge.appflowy import list_documents
-
     workspace_id = request.query.get("workspace_id")
     docs = list_documents(workspace_id)
     return web.json_response(
@@ -33,8 +36,6 @@ async def handle_list_documents(request: web.Request) -> web.Response:
 
 async def handle_get_document(request: web.Request) -> web.Response:
     """GET /api/knowledge/documents/{object_id} — get document metadata."""
-    from app.knowledge.appflowy import get_document
-
     object_id = request.match_info.get("object_id", "").strip()
     workspace_id = request.query.get("workspace_id")
     doc = get_document(object_id, workspace_id)
@@ -45,8 +46,6 @@ async def handle_get_document(request: web.Request) -> web.Response:
 
 async def handle_get_document_content(request: web.Request) -> web.Response:
     """GET /api/knowledge/documents/{object_id}/content — get document text."""
-    from app.knowledge.appflowy import get_document_content
-
     object_id = request.match_info.get("object_id", "").strip()
     workspace_id = request.query.get("workspace_id")
     content = get_document_content(object_id, workspace_id)
@@ -123,8 +122,6 @@ async def handle_register_workspace(request: web.Request) -> web.Response:
 
 async def handle_workspace_views(request: web.Request) -> web.Response:
     """GET /api/knowledge/workspaces/{workspace_id}/views — list docs."""
-    from app.knowledge.appflowy import list_documents
-
     workspace_id = request.match_info.get("workspace_id", "").strip() or None
     docs = list_documents(workspace_id)
     return web.json_response(
@@ -138,8 +135,6 @@ async def handle_workspace_views(request: web.Request) -> web.Response:
 
 async def handle_get_view(request: web.Request) -> web.Response:
     """GET /api/knowledge/views/{view_id} — fetch one document/view."""
-    from app.knowledge.appflowy import get_document
-
     view_id = request.match_info.get("view_id", "").strip()
     workspace_id = request.query.get("workspace_id")
     doc = get_document(view_id, workspace_id)
@@ -196,7 +191,7 @@ async def handle_create_view(request: web.Request) -> web.Response:
 
 
 async def handle_search(request: web.Request) -> web.Response:
-    """GET /api/knowledge/search?q=... — semantic search across AppFlowy."""
+    """GET /api/knowledge/search?q=... — offline lexical Markdown search."""
     query = request.query.get("q", "").strip()
     if not query:
         return web.json_response(
@@ -213,10 +208,7 @@ async def handle_search(request: web.Request) -> web.Response:
             status=400,
         )
 
-    # Thin-owner bridge while data-layer logic is still being extracted.
-    from app.knowledge.appflowy import semantic_search
-
-    results = semantic_search(query, workspace_id, limit)
+    results = search(query, workspace_id, limit)
     return web.json_response(
         {"query": query, "results": results, "count": len(results)},
     )

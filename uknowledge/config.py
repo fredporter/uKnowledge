@@ -23,6 +23,16 @@ def public_root() -> Path:
     return Path(explicit).expanduser() if explicit else Path.home() / "Public"
 
 
+def user_vault_root() -> Path:
+    explicit = os.environ.get("UDOS_USER_VAULT_ROOT")
+    return Path(explicit).expanduser() if explicit else Path.home() / "Vault"
+
+
+def shared_root() -> Path:
+    explicit = os.environ.get("UDOS_SHARED_ROOT")
+    return Path(explicit).expanduser() if explicit else Path.home() / "Shared"
+
+
 def global_knowledge_root() -> Path:
     explicit = os.environ.get("UKNOWLEDGE_GLOBAL_ROOT")
     return (
@@ -49,4 +59,3 @@ def workspace_permissions(path: str | Path) -> str:
     """Classify installed Public vaults as read-only; other vaults are writable."""
     candidate = Path(path).expanduser()
     return "read_only" if is_within(candidate, public_root()) else "read_write"
-
