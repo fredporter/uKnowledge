@@ -3,9 +3,10 @@
   "name": "uKnowledge Bridge",
   "kind": "knowledge",
   "version": "0.1.0",
-  "description": "AppFlowy bridge, semantic search, knowledge layer, vault indexing — extracted from uCore",
+  "description": "Offline knowledge, vault indexing, search, packaging, and contribution contracts",
   "optional": false,
   "api_prefix": "/api/knowledge",
+  "entrypoint": "uknowledge.setup",
   "route_registrar": "uknowledge.routes.register_routes",
   "dependencies": ["ucore-core"]
 }

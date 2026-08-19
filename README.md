@@ -1,20 +1,35 @@
-# uKnowledge — Knowledge Bridge
+# uKnowledge — Offline Knowledge Engine
 
-AppFlowy bridge, semantic search, knowledge layer, and vault indexing extracted from uCore.
+Offline corpus, vault indexing, search, packaging, provenance, and contribution
+contracts extracted from uCore.
 
-## Status: Hard-Cut Ownership (Wave B)
+## Status: Stabilizing Split-Repo Ownership
 
 uKnowledge is now the required owner for knowledge route registration.
 uCore delegates route registration to `uknowledge.routes.register_routes(app)`.
-Core read/query endpoints are live, with remaining mutation and sync paths
-still marked as explicit not-yet-implemented contracts.
+Core read/query endpoints still use a temporary AppFlowy compatibility bridge. The
+next extraction replaces that dependency with filesystem-first offline reading and
+search. Remaining mutation and sync paths are explicit not-yet-implemented
+contracts rather than silent fallbacks.
+
+## Permission model
+
+- Installed Public vaults, including `~/Public/global-knowledge`, are read-only in
+  normal user mode.
+- BrowserUI and user workflows write research into user-owned or explicitly selected
+  writable vaults.
+- Global Knowledge changes are contribution packages. Only an authorized
+  Dev/maintainer workflow may accept them into the canonical candidate corpus and
+  publish a validated edition.
+- Mutable registries and indexes live under `UDOS_HOME` (default
+  `~/Code/.udos/knowledge`), never in `~/.ucore` or a Public vault.
 
 ## Architecture
 
 ```
 uKnowledge (this repo)        uCore (host)
 ┌────────────────────────┐   ┌──────────────────────────────┐
-│ uknowledge/routes.py   │◄──│ knowledge_adapter.py         │
+│ routes + policy        │◄──│ extension registry           │
 │ (external ownership)   │   │   import uknowledge.routes   │
 │ /api/knowledge/*       │   │   fail-fast if missing       │
 └────────────────────────┘   └──────────────────────────────┘
@@ -61,6 +76,7 @@ Current behavior:
   "version": "0.1.0",
   "optional": false,
   "api_prefix": "/api/knowledge",
+  "entrypoint": "uknowledge.setup",
   "route_registrar": "uknowledge.routes.register_routes",
   "dependencies": ["ucore-core"]
 }
